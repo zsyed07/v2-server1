@@ -1,21 +1,33 @@
-from flask import Flask, render_template
-from flask_socketio import SocketIO
+import asyncio
+import websockets
+import json
 
-app = Flask(__name__, template_folder="templates")
-socketio = SocketIO(app, cors_allowed_origins="*")
+# Store connected clients
+connected_clients = []
 
-# Flask route to serve the frontend
-@app.route('/')
-def index():
-    return render_template('index.html')
+async def handle_connection(websocket, path):
+    # Register client
+    connected_clients.append(websocket)
+    print("New client connected")
 
-# Handle word sent from frontend
-@socketio.on('send_word')
-def handle_message(word):
-    print(f"Predicted Word: {word}")
-    # Emit the word to all connected clients (including Android app)
-    socketio.emit('receive_word', word)
+    try:
+        async for message in websocket:
+            print(f"Received message: {message}")
 
-# Run Flask server with Socket.IO
-if __name__ == "__main__":
-    socketio.run(app, host='0.0.0.0', port=8080,debug=True)
+            # Broadcast message to all connected clients
+            for client in connected_clients:
+                if client != websocket:  # Prevent echoing back to sender
+                    await client.send(message)
+
+    except websockets.ConnectionClosed:
+        print("Client disconnected")
+    finally:
+        # Unregister client
+        connected_clients.remove(websocket)
+
+# Start WebSocket server
+start_server = websockets.serve(handle_connection, "0.0.0.0", 8765)
+
+print("WebSocket server is running on ws://0.0.0.0:8765")
+asyncio.get_event_loop().run_until_complete(start_server)
+asyncio.get_event_loop().run_forever()

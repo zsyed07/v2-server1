@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Buttons</title>
+</head>
+<body>
+    <h2>Select a Word</h2>
+    <button onclick="sendWord('Hello')">Hello</button>
+    <button onclick="sendWord('Welcome')">Welcome</button>
+    <button onclick="sendWord('Goodbye')">Goodbye</button>
+    <button onclick="sendWord('Thank you')">Thank you</button>
+    <button onclick="sendWord('Sorry')">Sorry</button>
+
+    <script>
+        const socket = new WebSocket("ws://your-server-ip:8765");
+
+        socket.onopen = () => {
+            console.log("Connected to WebSocket server");
+        };
+
+        socket.onmessage = (event) => {
+            console.log("Received from server: " + event.data);
+        };
+
+        function sendWord(word) {
+            console.log("Sending: " + word);
+            socket.send(word);
+        }
+
+        socket.onclose = () => {
+            console.log("Disconnected from WebSocket server");
+        };
+    </script>
+</body>
+</html>
